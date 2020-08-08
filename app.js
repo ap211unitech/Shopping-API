@@ -6,7 +6,7 @@ const app = express();
 //End points
 app.use("/products", require("./routes/products"));
 app.get("*", (req, res) => {
-    res.status(200).send("<h1>This page handles Error.....</h1>")
+    res.status(200).send(`<h1>This page handles Error....</h1>`)
 })
 
 
