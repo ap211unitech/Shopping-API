@@ -1,16 +1,26 @@
 require("dotenv").config();
 const express = require("express");
 const app = express();
+const morgan = require("morgan");
+const cors = require("cors");
+const bodyparser = require("body-parser");
+const connection = require("./config/connection");
+const model = require("./config/product")
 
+//MiddleWare
+app.use(morgan("dev"));
+app.use(bodyparser.json());
+app.use(bodyparser.urlencoded({ extended: true }));
 
 //End points
 app.use("/products", require("./routes/products"));
-app.get("*", (req, res) => {
-    res.status(200).send(`<h1>This page handles Error....</h1>`)
+app.use("/orders", require("./routes/orders"));
+app.all("*", (req, res) => {
+    res.status(404).send(`<h1>Error Page....</h1>`);
 })
 
 
 //Listening Point
 app.listen(process.env.PORT, () => {
-    console.log(`Server listening on port ${process.env.PORT}`)
+    console.log(`Server listening on port ${process.env.PORT}`);
 })
