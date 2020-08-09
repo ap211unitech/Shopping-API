@@ -5,25 +5,40 @@ const product = require("../config/product")
 
 
 //End Points of Products.js
-router.get("/", async (req, res) => {
-    try {
-        res.status(200).json({
-            message: "All Items You Want",
-            totalProducts: (await product.find()).length > 0 ? await product.find() : "No Items Present",
-        });
-    } catch (err) {
-        console.log(err);
-        res.status(500).json.parse({
-            message: "Some Error Occured...."
-        });
-    }
+router.get("/", (req, res) => {
+    product.find()
+        .select("name price _id")
+        .exec()
+        .then(docs => {
+            const response = {
+                message: "All items that you want",
+                count: docs.length,
+                products: docs.map(doc => {
+                    return {
+                        _id: doc._id,
+                        name: doc.name,
+                        price: doc.price,
+                        request: {
+                            type: "GET",
+                            url: "http://localhost/products/" + doc._id
+                        }
+                    }
+                })
+            }
+            res.status(200).json(response);
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: "Can Not Get your request..."
+            })
+        })
 });
 
 router.get("/:productId", async (req, res) => {
     try {
         res.status(200).json({
             message: "Item finded Succeesfully..",
-            DesiredProduct: (await product.find({ _id: req.params.productId })).length > 0 ? await product.find({ _id: req.params.productId }) : `No Item Present of Id: ${req.params.productId}`
+            DesiredProduct: (await product.find({ _id: req.params.productId })).length > 0 ? await product.find({ _id: req.params.productId }).select("name price _id") : `No Item Present of Id: ${req.params.productId}`
         });
     } catch (err) {
         console.log(err);
@@ -43,8 +58,17 @@ router.post("/", async (req, res) => {
             price: req.body.price
         });
         await Product.save().then(result => {
-            console.log(result);
-            res.status(200).json(result);
+            let postrequest = {
+                message: "Product Created Successfully..",
+                _id: result._id,
+                name: result.name,
+                price: result.price,
+                request: {
+                    type: "GET",
+                    url: "http://localhost/products/" + result._id
+                }
+            }
+            res.status(200).json(postrequest);
         }).catch(err => {
             console.log(err);
             res.status(200).json(err);
@@ -62,10 +86,12 @@ router.patch("/:productId", async (req, res) => {
     let id = req.params.productId;
     try {
         const updatedProduct = await product.update({ _id: id }, { $set: { name: req.body.name, price: req.body.price } });
-        console.log(await product.find({ _id: id }));
         res.status(200).json({
             message: `Product of Id: ${id} Updated...`,
-            updatedProduct: await product.find({ _id: id })
+            request: {
+                type: "GET",
+                url: "http://localhost/products/" + id
+            }
         });
     } catch (err) {
         console.log(err);
@@ -82,7 +108,19 @@ router.delete("/:productId", async (req, res) => {
         let deletedDocument = await product.remove({ _id: id });
         res.status(200).json({
             message: `Item of ID: ${id} Deleted`,
-            deletedDocument: document
+            deletedDocument: {
+                _id: id,
+                name: document[0].name,
+                price: document[0].price
+            },
+            request: {
+                type: "POST",
+                url: "http://localhost/products/",
+                data: {
+                    name: "String",
+                    price: "Number"
+                }
+            }
         });
     } catch (err) {
         console.log(err)

@@ -6,3 +6,5 @@ mongoose.connect(process.env.DB_URL, {
 }, () => {
     console.log("DATABASE CONENCTED...")
 });
+
+mongoose.Promise = global.Promise;
