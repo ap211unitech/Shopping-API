@@ -84,8 +84,8 @@ router.post("/", (req, res) => {
             }
             const order = new orderModel({
                 _id: mongoose.Types.ObjectId(),
-                quantity: req.body.quantity,
-                product: req.body.product
+                product: req.body.product,
+                quantity: req.body.quantity
             });
             return order.save();
         })
