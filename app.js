@@ -5,7 +5,9 @@ const morgan = require("morgan");
 const cors = require("cors");
 const bodyparser = require("body-parser");
 const connection = require("./config/connection");
-const model = require("./config/product")
+const product = require("./config/product");
+const order = require("./config/order");
+
 
 //MiddleWare
 app.use(morgan("dev"));
