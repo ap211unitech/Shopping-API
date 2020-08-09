@@ -37,8 +37,8 @@ router.get("/", (req, res) => {
             res.status(500).json({
                 message: "Could not get your orders..."
             })
-        })
-})
+        });
+});
 
 
 router.get("/:orderId", (req, res) => {
