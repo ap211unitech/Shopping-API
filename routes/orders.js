@@ -1,36 +1,137 @@
 const router = require("express").Router();
-
+const mongoose = require("mongoose");
+const orderModel = require("../config/order");
+const productModel = require("../config/product");
 
 
 
 //End Points of orders.js
 router.get("/", (req, res) => {
-    res.status(200).json({
-        message: "Order's GET page"
-    })
+    orderModel.find()
+        .select("product quantity _id")
+        .exec()
+        .then(result => {
+            console.log(result);
+            res.status(200).json({
+                message: "Your all orders..",
+                count: result.length,
+                orders: result.map(docs => {
+                    return {
+                        _id: docs._id,
+                        product: docs.product,
+                        quantity: docs.quantity,
+                        request: {
+                            type: "GET",
+                            url: "http://localhost/orders/" + docs._id
+                        },
+                        productDetails: {
+                            type: "GET",
+                            url: "http://localhost/products/" + docs.product
+                        }
+                    }
+                })
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                message: "Could not get your orders..."
+            })
+        })
 })
+
+
+router.get("/:orderId", (req, res) => {
+    orderModel.findById(req.params.orderId)
+        .select("_id product quantity")
+        .exec()
+        .then(result => {
+            res.status(200).json({
+                message: `Order of ID: ${req.params.orderId}`,
+                Order: {
+                    _id: result._id,
+                    productId: result.product,
+                    quantity: result.quantity
+                },
+                request: {
+                    type: "GET",
+                    url: "http://localhost/orders/"
+                },
+                productDetails: {
+                    type: "GET",
+                    url: "http://localhost/products/" + result.product
+                }
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                message: "Some Error Occured...",
+                error: err
+            });
+        });
+});
+
+
 
 router.post("/", (req, res) => {
-    const order = {
-        name: req.body.name,
-        quantity: req.body.quantity
-    }
-    res.status(200).json({
-        message: "Order's POST page",
-        order: order
-    })
-})
+    console.log(req.body)
+    productModel.findById(req.body.product)
+        .then(product => {
+            if (!product) {
+                return res.status(404).json({
+                    message: "Product not found"
+                });
+            }
+            const order = new orderModel({
+                _id: mongoose.Types.ObjectId(),
+                quantity: req.body.quantity,
+                product: req.body.product
+            });
+            return order.save();
+        })
+        .then(result => {
+            console.log(result);
+            res.status(201).json({
+                message: "Order stored",
+                createdOrder: {
+                    _id: result._id,
+                    product: result.product,
+                    quantity: result.quantity
+                },
+                request: {
+                    type: "GET",
+                    url: "http://localhost/orders/" + result._id
+                }
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
+});
 
-router.get("/:productId", (req, res) => {
-    res.status(200).json({
-        message: `Order of ID ${req.params.productId} `
-    })
-})
 
-router.delete("/:productId", (req, res) => {
-    res.status(200).json({
-        message: `Order DELETED of ID ${req.params.productId}`
-    })
+
+router.delete("/:orderId", (req, res) => {
+    orderModel.remove({ _id: req.params.orderId })
+        .exec()
+        .then(result => {
+            res.status(200).json({
+                message: "Order deleted",
+                request: {
+                    type: "POST",
+                    url: "http://localhost:3000/orders",
+                    data: { product: "ID", quantity: "Number" }
+                }
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
 })
 
 
